@@ -1,0 +1,15 @@
+node_modules
+dist
+
+.env
+
+.git
+.gitignore
+.vscode
+
+Dockerfile
+docker-compose*.yml
+*.md
+ytpt-state
+server/*.test.mjs
+scripts

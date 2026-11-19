@@ -1,0 +1,40 @@
+# ytpt + the GUI together. Expects the ytpt project checked out next to this one:
+#
+#   Projects/
+#     YouTube-Playlist-Tracker/    <- ytpt
+#     YTPT-GUI/                    <- this project
+#
+#   docker compose -f docker-compose.full.yml up -d --build
+#   then open http://127.0.0.1:8080
+#
+# The ytpt API is NOT published to the host: only the GUI can reach it, over the
+# private compose network. That matters because ytpt has no authentication.
+services:
+  ytpt:
+    build: ../YouTube-Playlist-Tracker
+    restart: unless-stopped
+    environment:
+      YTPT_SERVER_ENABLED: "true"
+      YTPT_SERVER_HOST: "0.0.0.0"
+    volumes:
+      - ./ytpt-state/config:/app/config   # database + cookies.txt (put cookies.txt here if you use one)
+      - ./ytpt-state/data:/app/data       # downloaded videos
+      # Optional: your own ytpt config instead of the built-in defaults.
+      # - ./ytpt.conf:/app/ytpt.conf:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  ytpt-gui:
+    build: .
+    restart: unless-stopped
+    environment:
+      YTPT_API_URL: http://ytpt:8000
+    depends_on:
+      ytpt:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"

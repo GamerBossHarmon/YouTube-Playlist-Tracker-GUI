@@ -1,0 +1,18 @@
+# The GUI on its own, pointed at a ytpt API that is already running somewhere.
+#   YTPT_UPSTREAM_URL=http://192.168.1.20:8000 docker compose up -d --build
+# To run ytpt and the GUI together, use docker-compose.full.yml instead.
+services:
+  gui:
+    build: .
+    restart: unless-stopped
+    environment:
+      # Default: ytpt running on this Docker host (its API enabled and reachable on port 8000).
+      # Deliberately NOT read from YTPT_API_URL: compose auto-loads .env, which holds the *dev* value
+      # (http://127.0.0.1:8000), and inside a container 127.0.0.1 is the container itself.
+      YTPT_API_URL: ${YTPT_UPSTREAM_URL:-http://host.docker.internal:8000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # makes host.docker.internal work on Linux too
+    ports:
+      # Loopback only: ytpt has no authentication. Put Tailscale / a reverse proxy
+      # in front before widening this.
+      - "127.0.0.1:8080:8080"

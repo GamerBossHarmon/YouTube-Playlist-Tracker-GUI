@@ -1,0 +1,3822 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ytpt",
+    "description": "YouTube Playlist Tracker API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Api Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "System",
+        "operationId": "system_api_system_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts": {
+      "get": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "List Accounts",
+        "operationId": "list_accounts_api_accounts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Accounts Api Accounts Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Add Account",
+        "description": "Add a secondary (read-only by default) account from an uploaded cookies.txt.",
+        "operationId": "add_account_api_accounts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{account_id}/cookies": {
+      "put": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Replace Cookies",
+        "description": "Replace an account's cookies (they expire). Works for the primary too.",
+        "operationId": "replace_cookies_api_accounts__account_id__cookies_put",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCookiesUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{account_id}/refresh": {
+      "post": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Refresh Account",
+        "description": "Re-check who this account is and whether its cookies still log in.",
+        "operationId": "refresh_account_api_accounts__account_id__refresh_post",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{account_id}": {
+      "delete": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Delete Account",
+        "description": "Remove a secondary account. Sources that used it fall back to the primary.",
+        "operationId": "delete_account_api_accounts__account_id__delete",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{account_id}/playlists": {
+      "get": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Account Playlists",
+        "description": "Playlists this account can see (incl. private ones), each flagged with the\nid of the tracked source if it's already being archived. Hits YouTube.",
+        "operationId": "account_playlists_api_accounts__account_id__playlists_get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountPlaylistOut"
+                  },
+                  "title": "Response Account Playlists Api Accounts  Account Id  Playlists Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sources": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "List Sources",
+        "operationId": "list_sources_api_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Sources Api Sources Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Create Source",
+        "description": "Creates the source and returns immediately; the first check runs in the\nbackground (watch the events stream for its result).",
+        "operationId": "create_source_api_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sources/{source_id}": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Get Source",
+        "operationId": "get_source_api_sources__source_id__get",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Source Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Update Source",
+        "operationId": "update_source_api_sources__source_id__patch",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Source Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Delete Source",
+        "description": "Removes the source only; videos and files are kept and\nshow up under Orphaned if no other source tracks them.",
+        "operationId": "delete_source_api_sources__source_id__delete",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Source Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sources/{source_id}/check": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Check Source Now",
+        "description": "Force a check now (works on disabled sources too, like the CLI).",
+        "operationId": "check_source_now_api_sources__source_id__check_post",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Source Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sources/{source_id}/videos": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Source Videos",
+        "description": "Current members in playlist order (removed ones live in the timeline).",
+        "operationId": "source_videos_api_sources__source_id__videos_get",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_SourceVideoOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sources/{source_id}/timeline": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Source Timeline",
+        "description": "Per-check history of adds/removes/reorders, newest first.\nchanges_only hides no-op checks from the page (the cursor still advances\npast them, so a page may hold fewer than `limit` items).",
+        "operationId": "source_timeline_api_sources__source_id__timeline_get",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Id"
+            }
+          },
+          {
+            "name": "changes_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Changes Only"
+            }
+          },
+          {
+            "name": "detail_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5000,
+              "minimum": 0,
+              "default": 200,
+              "title": "Detail Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "List Videos",
+        "operationId": "list_videos_api_videos_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/VideoStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Substring match on title/channel",
+              "title": "Q"
+            },
+            "description": "Substring match on title/channel"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "newest_archived | oldest_archived | upload_date | title",
+              "title": "Sort"
+            },
+            "description": "newest_archived | oldest_archived | upload_date | title"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_VideoOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/orphaned": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "List Orphaned",
+        "description": "Downloaded videos no tracked source contains any more.",
+        "operationId": "list_orphaned_api_videos_orphaned_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_VideoOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Get Video",
+        "operationId": "get_video_api_videos__youtube_id__get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/comments": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Video Comments",
+        "description": "Comments saved with the video (download.download_comments, or fetched on\ndemand). Top-level comments are paged; replies come nested under their parent.",
+        "operationId": "video_comments_api_videos__youtube_id__comments_get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/comments/fetch": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Fetch Video Comments",
+        "description": "Download just this video's comments now and save them next to the video,\nwhatever download.download_comments is set to. Can take a while.",
+        "operationId": "fetch_video_comments_api_videos__youtube_id__comments_fetch_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/redownload": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Redownload Video",
+        "description": "Re-queue a downloaded video whose file went missing, at the top of the queue.",
+        "operationId": "redownload_video_api_videos__youtube_id__redownload_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/locate": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Locate Video",
+        "description": "Search the data folders for a missing file (matched by the [id] in its\nname) and re-attach it if found.",
+        "operationId": "locate_video_api_videos__youtube_id__locate_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/retry": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Retry Video",
+        "description": "Re-queue a permanently failed video with a fresh retry budget.",
+        "operationId": "retry_video_api_videos__youtube_id__retry_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/download-now": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Download Now",
+        "description": "Move a queued (or permanently failed) video to the top of the queue and\nskip the cooldown gap so the worker picks it up right away. An in-flight\ndownload isn't interrupted; this one starts as soon as it finishes.\n\nWith `{\"account\": \"<id>\"}` this single download uses that account's cookies\ninstead of the primary's (e.g. a members-only video only a side account can\nsee). It applies to this attempt only.",
+        "operationId": "download_now_api_videos__youtube_id__download_now_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DownloadNowRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/attempts": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Video Attempts",
+        "operationId": "video_attempts_api_videos__youtube_id__attempts_get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttemptOut"
+                  },
+                  "title": "Response Video Attempts Api Videos  Youtube Id  Attempts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attempts/{attempt_id}/log": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Attempt Log",
+        "description": "Verbose yt-dlp output for one attempt.",
+        "operationId": "attempt_log_api_attempts__attempt_id__log_get",
+        "parameters": [
+          {
+            "name": "attempt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Attempt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queue": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Queue",
+        "description": "What the single global worker is doing and what's waiting.",
+        "operationId": "queue_api_queue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "List Events",
+        "description": "The execution log, newest first.",
+        "operationId": "list_events_api_events_get",
+        "parameters": [
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventSeverity"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Repeatable",
+              "title": "Severity"
+            },
+            "description": "Repeatable"
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Repeatable",
+              "title": "Event Type"
+            },
+            "description": "Repeatable"
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "video_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Video Id"
+            }
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cursor: only events older than this id",
+              "title": "Before Id"
+            },
+            "description": "Cursor: only events older than this id"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events/stream": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Stream Events",
+        "description": "SSE live tail. Without a cursor the stream starts from 'now'; send\nLast-Event-ID (EventSource does this automatically on reconnect) or\n?after_id= to replay what you missed. No DB session is held open.",
+        "operationId": "stream_events_api_events_stream_get",
+        "parameters": [
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventSeverity"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Type"
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "video_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Video Id"
+            }
+          },
+          {
+            "name": "after_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Replay events after this id (Last-Event-ID wins)",
+              "title": "After Id"
+            },
+            "description": "Replay events after this id (Last-Event-ID wins)"
+          },
+          {
+            "name": "last-event-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media/{youtube_id}/video": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Media Video",
+        "description": "The archived file. Starlette's FileResponse answers Range requests, so\nseeking works in <video>.",
+        "operationId": "media_video_api_media__youtube_id__video_get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media/{youtube_id}/thumbnail": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Media Thumbnail",
+        "operationId": "media_thumbnail_api_media__youtube_id__thumbnail_get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media/{youtube_id}/subtitles/{lang}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Media Subtitles",
+        "description": "Sidecar subtitles as WebVTT (SRT is converted on the fly).",
+        "operationId": "media_subtitles_api_media__youtube_id__subtitles__lang__get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          },
+          {
+            "name": "lang",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lang"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountCookiesUpdate": {
+        "properties": {
+          "cookies": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Cookies"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cookies"
+        ],
+        "title": "AccountCookiesUpdate"
+      },
+      "AccountCreate": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "cookies": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Cookies",
+            "description": "Contents of a Netscape-format cookies.txt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "cookies"
+        ],
+        "title": "AccountCreate"
+      },
+      "AccountOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "handle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Handle"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "title": "Is Primary"
+          },
+          "present": {
+            "type": "boolean",
+            "title": "Present"
+          },
+          "logged_in": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logged In"
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
+          "source_count": {
+            "type": "integer",
+            "title": "Source Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "name",
+          "is_primary",
+          "present"
+        ],
+        "title": "AccountOut"
+      },
+      "AccountPlaylistOut": {
+        "properties": {
+          "playlist_id": {
+            "type": "string",
+            "title": "Playlist Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "video_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Count"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "playlist_id",
+          "title",
+          "url"
+        ],
+        "title": "AccountPlaylistOut"
+      },
+      "AttemptOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "video_id": {
+            "type": "string",
+            "title": "Video Id"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FailureReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bytes_downloaded": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bytes Downloaded"
+          },
+          "has_log": {
+            "type": "boolean",
+            "title": "Has Log"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "video_id",
+          "source_id",
+          "started_at",
+          "finished_at",
+          "success",
+          "failure_reason",
+          "bytes_downloaded",
+          "has_log"
+        ],
+        "title": "AttemptOut"
+      },
+      "CheckStarted": {
+        "properties": {
+          "source_id": {
+            "type": "integer",
+            "title": "Source Id"
+          },
+          "started": {
+            "type": "boolean",
+            "title": "Started",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id"
+        ],
+        "title": "CheckStarted"
+      },
+      "CommentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "like_count": {
+            "type": "integer",
+            "title": "Like Count"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "is_pinned": {
+            "type": "boolean",
+            "title": "Is Pinned"
+          },
+          "is_uploader": {
+            "type": "boolean",
+            "title": "Is Uploader"
+          },
+          "replies": {
+            "items": {
+              "$ref": "#/components/schemas/CommentOut"
+            },
+            "type": "array",
+            "title": "Replies",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "author",
+          "text",
+          "like_count",
+          "timestamp",
+          "is_pinned",
+          "is_uploader"
+        ],
+        "title": "CommentOut"
+      },
+      "CommentsOut": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "available",
+          "total",
+          "items",
+          "limit",
+          "offset"
+        ],
+        "title": "CommentsOut"
+      },
+      "DownloadNowRequest": {
+        "properties": {
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account"
+          }
+        },
+        "type": "object",
+        "title": "DownloadNowRequest"
+      },
+      "EventOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/EventSeverity"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "video_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "event_type",
+          "severity",
+          "message",
+          "source_id",
+          "video_id",
+          "attempt_id"
+        ],
+        "title": "EventOut"
+      },
+      "EventSeverity": {
+        "type": "string",
+        "enum": [
+          "debug",
+          "info",
+          "warning",
+          "error"
+        ],
+        "title": "EventSeverity"
+      },
+      "EventsPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EventOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_before_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_before_id"
+        ],
+        "title": "EventsPage"
+      },
+      "FailureReason": {
+        "type": "string",
+        "enum": [
+          "private",
+          "removed_by_uploader",
+          "tos",
+          "region_blocked",
+          "members_only",
+          "unavailable_unknown",
+          "download_error"
+        ],
+        "title": "FailureReason"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LocateOut": {
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "title": "Found"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VideoOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "found"
+        ],
+        "title": "LocateOut"
+      },
+      "Page_SourceVideoOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SourceVideoOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[SourceVideoOut]"
+      },
+      "Page_VideoOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/VideoOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[VideoOut]"
+      },
+      "ProgressOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "downloaded_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downloaded Bytes"
+          },
+          "total_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Bytes"
+          },
+          "speed_bytes_per_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed Bytes Per Sec"
+          },
+          "eta_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eta Seconds"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "downloaded_bytes",
+          "total_bytes",
+          "speed_bytes_per_sec",
+          "eta_seconds",
+          "percent"
+        ],
+        "title": "ProgressOut"
+      },
+      "QueueItem": {
+        "properties": {
+          "video": {
+            "$ref": "#/components/schemas/VideoOut"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "video"
+        ],
+        "title": "QueueItem"
+      },
+      "QueueOut": {
+        "properties": {
+          "downloading": {
+            "items": {
+              "$ref": "#/components/schemas/QueueItem"
+            },
+            "type": "array",
+            "title": "Downloading"
+          },
+          "queued": {
+            "items": {
+              "$ref": "#/components/schemas/QueueItem"
+            },
+            "type": "array",
+            "title": "Queued"
+          },
+          "queued_total": {
+            "type": "integer",
+            "title": "Queued Total"
+          },
+          "next_download_in_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Download In Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "downloading",
+          "queued",
+          "queued_total",
+          "next_download_in_seconds"
+        ],
+        "title": "QueueOut"
+      },
+      "SourceCreate": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Url"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "check_interval_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Interval Seconds"
+          },
+          "data_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Dir"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "SourceCreate",
+        "description": "Everything except `url` is optional and null by default: null means\n'use the global setting' (scheduler.playlist_check_interval_seconds,\npaths.data_dir) and the source type is auto-detected from the URL.",
+        "examples": [
+          {
+            "url": "https://www.youtube.com/playlist?list=PLxxxxxxxxxxxx"
+          }
+        ]
+      },
+      "SourceOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "source_type": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "uploader": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploader"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "check_interval_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Interval Seconds"
+          },
+          "effective_check_interval_seconds": {
+            "type": "integer",
+            "title": "Effective Check Interval Seconds"
+          },
+          "data_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Dir"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account"
+          },
+          "account_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Label"
+          },
+          "last_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Checked At"
+          },
+          "next_check_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Check At"
+          },
+          "check_running": {
+            "type": "boolean",
+            "title": "Check Running"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "video_count": {
+            "type": "integer",
+            "title": "Video Count"
+          },
+          "downloaded_count": {
+            "type": "integer",
+            "title": "Downloaded Count"
+          },
+          "missing_count": {
+            "type": "integer",
+            "title": "Missing Count",
+            "default": 0
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count",
+            "default": 0
+          },
+          "disk_bytes": {
+            "type": "integer",
+            "title": "Disk Bytes"
+          },
+          "thumbnail_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Thumbnail Urls",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "source_type",
+          "title",
+          "uploader",
+          "enabled",
+          "check_interval_seconds",
+          "effective_check_interval_seconds",
+          "data_dir",
+          "last_checked_at",
+          "next_check_at",
+          "check_running",
+          "created_at",
+          "video_count",
+          "downloaded_count",
+          "disk_bytes"
+        ],
+        "title": "SourceOut"
+      },
+      "SourceType": {
+        "type": "string",
+        "enum": [
+          "playlist",
+          "channel",
+          "video"
+        ],
+        "title": "SourceType"
+      },
+      "SourceUpdate": {
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "check_interval_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Interval Seconds"
+          },
+          "data_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Dir"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account"
+          }
+        },
+        "type": "object",
+        "title": "SourceUpdate",
+        "description": "Partial update: only fields present in the request body are applied, so\nan explicit null clears check_interval_seconds/data_dir (global fallback).",
+        "examples": [
+          {
+            "enabled": false
+          }
+        ]
+      },
+      "SourceVideoOut": {
+        "properties": {
+          "youtube_id": {
+            "type": "string",
+            "title": "Youtube Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "upload_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VideoStatus"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FailureReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retry_count": {
+            "type": "integer",
+            "title": "Retry Count"
+          },
+          "priority_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority At"
+          },
+          "download_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Account"
+          },
+          "file_missing_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Missing At"
+          },
+          "file_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size Bytes"
+          },
+          "downloaded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downloaded At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "local_thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Thumbnail Url"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "youtube_id",
+          "title",
+          "channel",
+          "duration_seconds",
+          "upload_date",
+          "status",
+          "failure_reason",
+          "retry_count",
+          "file_size_bytes",
+          "downloaded_at",
+          "created_at",
+          "thumbnail_url",
+          "position",
+          "added_at"
+        ],
+        "title": "SourceVideoOut"
+      },
+      "SystemOut": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "ytdlp_version": {
+            "type": "string",
+            "title": "Ytdlp Version"
+          },
+          "scheduler_running": {
+            "type": "boolean",
+            "title": "Scheduler Running"
+          },
+          "cookies_present": {
+            "type": "boolean",
+            "title": "Cookies Present"
+          },
+          "primary_account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_count": {
+            "type": "integer",
+            "title": "Source Count"
+          },
+          "video_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Video Counts"
+          },
+          "disk_usage_bytes": {
+            "type": "integer",
+            "title": "Disk Usage Bytes"
+          },
+          "data_dir_free_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Dir Free Bytes"
+          },
+          "data_dir_total_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Dir Total Bytes"
+          },
+          "server_host": {
+            "type": "string",
+            "title": "Server Host"
+          },
+          "server_exposed": {
+            "type": "boolean",
+            "title": "Server Exposed"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "ytdlp_version",
+          "scheduler_running",
+          "cookies_present",
+          "source_count",
+          "video_counts",
+          "disk_usage_bytes",
+          "data_dir_free_bytes",
+          "data_dir_total_bytes",
+          "server_host",
+          "server_exposed",
+          "config"
+        ],
+        "title": "SystemOut"
+      },
+      "TimelineEntryOut": {
+        "properties": {
+          "snapshot_id": {
+            "type": "integer",
+            "title": "Snapshot Id"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "video_count": {
+            "type": "integer",
+            "title": "Video Count"
+          },
+          "is_first_check": {
+            "type": "boolean",
+            "title": "Is First Check"
+          },
+          "has_changes": {
+            "type": "boolean",
+            "title": "Has Changes"
+          },
+          "added_count": {
+            "type": "integer",
+            "title": "Added Count"
+          },
+          "removed_count": {
+            "type": "integer",
+            "title": "Removed Count"
+          },
+          "reordered_count": {
+            "type": "integer",
+            "title": "Reordered Count"
+          },
+          "added": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineVideo"
+            },
+            "type": "array",
+            "title": "Added"
+          },
+          "removed": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineVideo"
+            },
+            "type": "array",
+            "title": "Removed"
+          },
+          "reordered": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineReordered"
+            },
+            "type": "array",
+            "title": "Reordered"
+          }
+        },
+        "type": "object",
+        "required": [
+          "snapshot_id",
+          "captured_at",
+          "video_count",
+          "is_first_check",
+          "has_changes",
+          "added_count",
+          "removed_count",
+          "reordered_count",
+          "added",
+          "removed",
+          "reordered"
+        ],
+        "title": "TimelineEntryOut"
+      },
+      "TimelineOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineEntryOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_before_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_before_id"
+        ],
+        "title": "TimelineOut"
+      },
+      "TimelineReordered": {
+        "properties": {
+          "youtube_id": {
+            "type": "string",
+            "title": "Youtube Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "old_position": {
+            "type": "integer",
+            "title": "Old Position"
+          },
+          "new_position": {
+            "type": "integer",
+            "title": "New Position"
+          }
+        },
+        "type": "object",
+        "required": [
+          "youtube_id",
+          "title",
+          "old_position",
+          "new_position"
+        ],
+        "title": "TimelineReordered"
+      },
+      "TimelineVideo": {
+        "properties": {
+          "youtube_id": {
+            "type": "string",
+            "title": "Youtube Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "youtube_id",
+          "title"
+        ],
+        "title": "TimelineVideo"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VideoDetail": {
+        "properties": {
+          "youtube_id": {
+            "type": "string",
+            "title": "Youtube Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "upload_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VideoStatus"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FailureReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retry_count": {
+            "type": "integer",
+            "title": "Retry Count"
+          },
+          "priority_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority At"
+          },
+          "download_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Account"
+          },
+          "file_missing_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Missing At"
+          },
+          "file_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size Bytes"
+          },
+          "downloaded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downloaded At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "local_thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Thumbnail Url"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "channel_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Id"
+          },
+          "file_available": {
+            "type": "boolean",
+            "title": "File Available"
+          },
+          "subtitle_languages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Subtitle Languages"
+          },
+          "has_thumbnail": {
+            "type": "boolean",
+            "title": "Has Thumbnail"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/VideoMembership"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "type": "object",
+        "required": [
+          "youtube_id",
+          "title",
+          "channel",
+          "duration_seconds",
+          "upload_date",
+          "status",
+          "failure_reason",
+          "retry_count",
+          "file_size_bytes",
+          "downloaded_at",
+          "created_at",
+          "thumbnail_url",
+          "description",
+          "channel_id",
+          "file_available",
+          "subtitle_languages",
+          "has_thumbnail",
+          "attempt_count",
+          "sources"
+        ],
+        "title": "VideoDetail"
+      },
+      "VideoMembership": {
+        "properties": {
+          "source_id": {
+            "type": "integer",
+            "title": "Source Id"
+          },
+          "source_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Title"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "removed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_title",
+          "position",
+          "added_at",
+          "removed_at"
+        ],
+        "title": "VideoMembership"
+      },
+      "VideoOut": {
+        "properties": {
+          "youtube_id": {
+            "type": "string",
+            "title": "Youtube Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "upload_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VideoStatus"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FailureReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retry_count": {
+            "type": "integer",
+            "title": "Retry Count"
+          },
+          "priority_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority At"
+          },
+          "download_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Account"
+          },
+          "file_missing_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Missing At"
+          },
+          "file_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size Bytes"
+          },
+          "downloaded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downloaded At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "local_thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Thumbnail Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "youtube_id",
+          "title",
+          "channel",
+          "duration_seconds",
+          "upload_date",
+          "status",
+          "failure_reason",
+          "retry_count",
+          "file_size_bytes",
+          "downloaded_at",
+          "created_at",
+          "thumbnail_url"
+        ],
+        "title": "VideoOut"
+      },
+      "VideoStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "downloading",
+          "downloaded",
+          "failed",
+          "tombstoned",
+          "unavailable"
+        ],
+        "title": "VideoStatus"
+      }
+    }
+  }
+}
