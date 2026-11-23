@@ -6,6 +6,7 @@ import { useAttempts, useLocateVideo, useQueue, useRedownloadVideo, useRetryVide
 import type { VideoDetail } from '../api/types'
 import { Comments } from '../components/Comments'
 import { DownloadNowButton } from '../components/DownloadNowButton'
+import { FailVideoButton } from '../components/FailVideoButton'
 import { AttemptLogDialog } from '../components/AttemptLogDialog'
 import { Button } from '../components/ui/Button'
 import { Badge, ErrorState, ProgressBar, Spinner } from '../components/ui/Feedback'
@@ -82,8 +83,9 @@ function Placeholder({ video }: { video: VideoDetail }) {
 		body = (
 			<>
 				<p>Waiting for its turn. Downloads run one at a time with a pause between each, to be polite to YouTube.</p>
-				<div className="mt-4">
+				<div className="mt-4 flex flex-wrap justify-center gap-2">
 					<DownloadNowButton youtubeId={video.youtube_id} size="md" variant="primary" />
+					<FailVideoButton youtubeId={video.youtube_id} />
 				</div>
 			</>
 		)
@@ -99,6 +101,9 @@ function Placeholder({ video }: { video: VideoDetail }) {
 					{progress?.speed_bytes_per_sec != null && ` · ${formatSpeed(progress.speed_bytes_per_sec)}`}
 					{progress?.eta_seconds != null && ` · ${formatEta(progress.eta_seconds)} left`}
 				</p>
+				<div className="mt-4">
+					<FailVideoButton youtubeId={video.youtube_id} downloading />
+				</div>
 			</div>
 		)
 	} else if (video.status === 'failed') {
@@ -107,7 +112,9 @@ function Placeholder({ video }: { video: VideoDetail }) {
 		body = (
 			<>
 				<p>
-					{failureLabel(video.failure_reason) ?? 'Unknown error'} — gave up after {video.retry_count} attempts.
+					{video.failure_reason === 'cancelled'
+						? 'You marked this video as failed.'
+						: `${failureLabel(video.failure_reason) ?? 'Unknown error'} — gave up after ${video.retry_count} attempts.`}
 				</p>
 				<div className="mt-4 flex flex-wrap justify-center gap-2">
 				<Button

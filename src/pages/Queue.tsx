@@ -1,9 +1,14 @@
-import { Download, Film, Hourglass } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download, Film, GripVertical, Hourglass } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { useQueue, useSystem } from '../api/queries'
+import { useMoveVideo, useQueue, useSystem } from '../api/queries'
 import type { QueueItem } from '../api/types'
 import { DownloadNowButton } from '../components/DownloadNowButton'
+import { FailVideoButton } from '../components/FailVideoButton'
+import { IconButton } from '../components/ui/Button'
 import { Badge, EmptyState, ErrorState, ProgressBar, Skeleton } from '../components/ui/Feedback'
+import { useToast } from '../components/ui/toastContext'
+import { cn } from '../lib/cn'
 import { formatBytes, formatEta, formatSpeed } from '../lib/format'
 import { useNow } from '../lib/useNow'
 import { useProgress } from '../live/progressStore'
@@ -39,8 +44,86 @@ function DownloadingRow({ item }: { item: QueueItem }) {
 					{p?.speed_bytes_per_sec != null && ` · ${formatSpeed(p.speed_bytes_per_sec)}`}
 					{p?.eta_seconds != null && ` · ${formatEta(p.eta_seconds)} left`}
 				</p>
+				<div className="mt-3">
+					<FailVideoButton youtubeId={item.video.youtube_id} downloading />
+				</div>
 			</div>
 		</li>
+	)
+}
+
+/**
+ * The waiting list. Allows draging a row by its handle to move it, or use the arrows.
+ * Only videos listed here can be moved.
+ */
+function WaitingList({ items, total }: { items: QueueItem[]; total: number }) {
+	const move = useMoveVideo()
+	const toast = useToast()
+	const [dragId, setDragId] = useState<string | null>(null)
+	const [overId, setOverId] = useState<string | null>(null)
+
+	const moveTo = (id: string, position: number) => {
+		if (position < 1 || position > total) return
+		move.mutate(
+			{ id, position },
+			{ onError: (err) => toast.error(err instanceof Error ? err.message : 'Could not reorder the queue.') },
+		)
+	}
+
+	return (
+		<ol className="flex flex-col divide-y divide-line overflow-hidden rounded-xl bg-surface">
+			{items.map((i) => {
+				const id = i.video.youtube_id
+				const pos = i.position ?? 0
+				return (
+					<li
+						key={id}
+						draggable={!move.isPending}
+						onDragStart={(e) => {
+							setDragId(id)
+							e.dataTransfer.effectAllowed = 'move'
+						}}
+						onDragOver={(e) => {
+							if (dragId && dragId !== id) {
+								e.preventDefault()
+								setOverId(id)
+							}
+						}}
+						onDragEnd={() => {
+							setDragId(null)
+							setOverId(null)
+						}}
+						onDrop={(e) => {
+							e.preventDefault()
+							if (dragId && dragId !== id) moveTo(dragId, pos)
+							setDragId(null)
+							setOverId(null)
+						}}
+						className={cn(
+							'flex items-center gap-2 px-2 py-2 text-sm sm:gap-3 sm:px-3',
+							dragId === id && 'opacity-40',
+							overId === id && 'bg-hover',
+						)}
+					>
+						<GripVertical className="size-4 shrink-0 cursor-grab text-faint" aria-hidden />
+						<span className="w-8 shrink-0 text-right text-muted tabular-nums">{pos}</span>
+						<Link to={`/watch/${id}`} className="min-w-0 flex-1 truncate hover:underline">
+							{i.video.title || id}
+						</Link>
+						<span className="inline-flex shrink-0 items-center">
+							<IconButton label="Move up" disabled={move.isPending || pos <= 1} onClick={() => moveTo(id, pos - 1)}>
+								<ChevronUp className="size-4" />
+							</IconButton>
+							<IconButton label="Move down" disabled={move.isPending || pos >= total} onClick={() => moveTo(id, pos + 1)}>
+								<ChevronDown className="size-4" />
+							</IconButton>
+						</span>
+						<DownloadNowButton youtubeId={id} />
+						<FailVideoButton youtubeId={id} compact />
+					</li>
+				)
+			})}
+		</ol>
 	)
 }
 
@@ -117,17 +200,7 @@ export function QueuePage() {
 							<h2 id="waiting" className="mb-3 flex items-center gap-2 text-base font-medium">
 								Waiting <Badge>{q.queued_total}</Badge>
 							</h2>
-							<ol className="flex flex-col divide-y divide-line overflow-hidden rounded-xl bg-surface">
-								{q.queued.map((i) => (
-									<li key={i.video.youtube_id} className="flex items-center gap-4 px-4 py-2.5 text-sm">
-										<span className="w-8 shrink-0 text-right text-muted tabular-nums">{i.position}</span>
-										<Link to={`/watch/${i.video.youtube_id}`} className="min-w-0 flex-1 truncate hover:underline">
-											{i.video.title || i.video.youtube_id}
-										</Link>
-										<DownloadNowButton youtubeId={i.video.youtube_id} />
-									</li>
-								))}
-							</ol>
+							<WaitingList items={q.queued} total={q.queued_total} />
 							{q.queued_total > q.queued.length && (
 								<p className="mt-2 text-xs text-faint">…and {q.queued_total - q.queued.length} more waiting.</p>
 							)}

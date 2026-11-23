@@ -3,7 +3,7 @@
   "info": {
     "title": "ytpt",
     "description": "YouTube Playlist Tracker API",
-    "version": "0.1.0"
+    "version": "1.0.1"
   },
   "paths": {
     "/api/health": {
@@ -1243,6 +1243,102 @@
         }
       }
     },
+    "/api/videos/{youtube_id}/move": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Move Video",
+        "description": "Reorder the download queue: put a queued video at a 1-based position.",
+        "operationId": "move_video_api_videos__youtube_id__move_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/fail": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Fail Video",
+        "description": "Give up on a video now instead of waiting out its retries. A queued video\nis marked failed immediately. A downloading one is aborted at the next\nprogress tick (or when its current attempt ends) and then marked failed with\nno further retries; the response still says 'downloading' until then.\nFailed videos can be retried afterwards.",
+        "operationId": "fail_video_api_videos__youtube_id__fail_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/videos/{youtube_id}/attempts": {
       "get": {
         "tags": [
@@ -2285,7 +2381,8 @@
           "region_blocked",
           "members_only",
           "unavailable_unknown",
-          "download_error"
+          "download_error",
+          "cancelled"
         ],
         "title": "FailureReason"
       },
@@ -2324,6 +2421,21 @@
           "found"
         ],
         "title": "LocateOut"
+      },
+      "MoveRequest": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Position",
+            "description": "1-based place in the download queue (clamped to its length)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position"
+        ],
+        "title": "MoveRequest"
       },
       "Page_SourceVideoOut_": {
         "properties": {
@@ -2555,7 +2667,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0.0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -2796,7 +2908,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0.0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"

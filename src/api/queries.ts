@@ -243,6 +243,28 @@ export function useDownloadNow() {
 	})
 }
 
+/** Put a queued video at a 1-based place in the download queue. */
+export function useMoveVideo() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({ id, position }: { id: string; position: number }) =>
+			api<Video>(`/api/videos/${encodeURIComponent(id)}/move`, { method: 'POST', json: { position } }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['queue'] }),
+	})
+}
+
+/**
+ * Give up on a video now instead of waiting out its retries. A queued one fails at once;
+ * a downloading one is aborted within moments, then fails with no further attempts.
+ */
+export function useFailVideo() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (id: string) => api<Video>(`/api/videos/${encodeURIComponent(id)}/fail`, { method: 'POST' }),
+		onSuccess: () => qc.invalidateQueries(),
+	})
+}
+
 // --- accounts (writes) ------------------------------------------------------------
 
 export function useAddAccount() {

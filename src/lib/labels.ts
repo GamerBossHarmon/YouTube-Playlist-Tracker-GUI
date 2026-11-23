@@ -8,6 +8,7 @@ export const FAILURE_LABELS: Record<FailureReason, string> = {
 	members_only: 'Members only',
 	unavailable_unknown: 'Unavailable (unknown reason)',
 	download_error: 'Download error',
+	cancelled: 'Stopped by you',
 }
 
 export function failureLabel(reason: FailureReason | null | undefined): string | null {

@@ -430,6 +430,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/videos/{youtube_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Video
+         * @description Reorder the download queue: put a queued video at a 1-based position.
+         */
+        post: operations["move_video_api_videos__youtube_id__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/videos/{youtube_id}/fail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fail Video
+         * @description Give up on a video now instead of waiting out its retries. A queued video
+         *     is marked failed immediately. A downloading one is aborted at the next
+         *     progress tick (or when its current attempt ends) and then marked failed with
+         *     no further retries; the response still says 'downloading' until then.
+         *     Failed videos can be retried afterwards.
+         */
+        post: operations["fail_video_api_videos__youtube_id__fail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/videos/{youtube_id}/attempts": {
         parameters: {
             query?: never;
@@ -759,7 +803,7 @@ export interface components {
          * FailureReason
          * @enum {string}
          */
-        FailureReason: "private" | "removed_by_uploader" | "tos" | "region_blocked" | "members_only" | "unavailable_unknown" | "download_error";
+        FailureReason: "private" | "removed_by_uploader" | "tos" | "region_blocked" | "members_only" | "unavailable_unknown" | "download_error" | "cancelled";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -770,6 +814,14 @@ export interface components {
             /** Found */
             found: boolean;
             video?: components["schemas"]["VideoOut"] | null;
+        };
+        /** MoveRequest */
+        MoveRequest: {
+            /**
+             * Position
+             * @description 1-based place in the download queue (clamped to its length)
+             */
+            position: number;
         };
         /** Page[SourceVideoOut] */
         Page_SourceVideoOut_: {
@@ -1935,6 +1987,72 @@ export interface operations {
                 "application/json": components["schemas"]["DownloadNowRequest"] | null;
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_video_api_videos__youtube_id__move_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fail_video_api_videos__youtube_id__fail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
