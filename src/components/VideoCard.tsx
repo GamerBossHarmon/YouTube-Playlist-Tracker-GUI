@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import type { Video } from '../api/types'
 import { formatBytes, formatDuration, formatRelative } from '../lib/format'
 import { failureLabel } from '../lib/labels'
+import { describeFormat, resolutionLabel } from '../lib/videoFormat'
 import { useProgress } from '../live/progressStore'
 import { cn } from '../lib/cn'
 import { Badge, ProgressBar } from './ui/Feedback'
@@ -44,6 +45,7 @@ export function VideoCard({ video, queuePosition, index }: VideoCardProps) {
 	const progress = useProgress(video.youtube_id)
 	const done = video.status === 'downloaded'
 	const title = video.title || video.youtube_id
+	const quality = resolutionLabel(video)
 
 	let statusBadge: React.ReactNode = null
 	if (video.status === 'queued') {
@@ -77,7 +79,12 @@ export function VideoCard({ video, queuePosition, index }: VideoCardProps) {
 						<AlertTriangle className="size-3.5" aria-hidden /> File missing
 					</span>
 				)}
-				{video.duration_seconds != null && done && (
+				{quality && done && !missing && (
+						<span className="absolute top-1.5 right-1.5 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium" title={describeFormat(video)}>
+							{quality}
+						</span>
+					)}
+					{video.duration_seconds != null && done && (
 					<span className="absolute right-1.5 bottom-1.5 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium">{formatDuration(video.duration_seconds)}</span>
 				)}
 				{index != null && <span className="absolute top-1.5 left-1.5 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-muted">#{index}</span>}

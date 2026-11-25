@@ -7,6 +7,7 @@ import type {
 	CommentsPage,
 	LocateResult,
 	EventsPage,
+	FormatsList,
 	QueueData,
 	Severity,
 	Source,
@@ -15,10 +16,13 @@ import type {
 	SourceVideoPage,
 	SystemInfo,
 	TimelinePage,
+	Upgrade,
+	UpgradeRequest,
 	Video,
 	VideoDetail,
 	VideoPage,
 	VideoStatus,
+	YtdlpUpdate,
 } from './types'
 
 // Query keys. The FIRST element is the "root" the live layer invalidates by
@@ -36,6 +40,7 @@ export const qk = {
 	orphaned: (q: string, sort: string) => ['videos', 'orphaned', q, sort] as const,
 	video: (id: string) => ['video', id] as const,
 	attempts: (id: string) => ['attempts', id] as const,
+	upgrade: (id: string) => ['upgrade', id] as const,
 	queue: ['queue'] as const,
 	events: (filters: EventFilters) => ['events', filters] as const,
 }
@@ -323,6 +328,73 @@ export function useFetchComments(id: string) {
 	return useMutation({
 		mutationFn: () => api<CommentsPage>(`/api/videos/${encodeURIComponent(id)}/comments/fetch`, { method: 'POST' }),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['comments', id] }),
+	})
+}
+
+// --- quality upgrades ---------------------------------------------------------------
+
+/** The video's pending/finished quality upgrade, or null. The live layer refreshes it on upgrade events. */
+export function useUpgrade(id: string) {
+	return useQuery({ queryKey: qk.upgrade(id), queryFn: () => api<Upgrade | null>(`/api/videos/${encodeURIComponent(id)}/upgrade`) })
+}
+
+/** Every format YouTube offers for the video. Asks YouTube, so only on demand and cached for a while. */
+export function useVideoFormats(id: string, enabled: boolean) {
+	return useQuery({
+		queryKey: ['video-formats', id] as const,
+		queryFn: () => api<FormatsList>(`/api/videos/${encodeURIComponent(id)}/formats`),
+		enabled,
+		staleTime: 5 * 60_000,
+		retry: false,
+	})
+}
+
+export function useRequestUpgrade(id: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (body: UpgradeRequest) => api<Upgrade>(`/api/videos/${encodeURIComponent(id)}/upgrade`, { method: 'POST', json: body }),
+		onSuccess: (upgrade) => {
+			qc.setQueryData(qk.upgrade(id), upgrade)
+			return qc.invalidateQueries({ queryKey: ['queue'] })
+		},
+	})
+}
+
+/** Replace the current file with the upgraded one (deletes the old file for good). */
+export function useAcceptUpgrade(id: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: () => api<Video>(`/api/videos/${encodeURIComponent(id)}/upgrade/accept`, { method: 'POST' }),
+		onSuccess: () => qc.invalidateQueries(), // file, size, format, grid and disk usage all changed
+	})
+}
+
+/** Cancel a running/queued upgrade, or throw away a finished one. The current file is never touched. */
+export function useDiscardUpgrade(id: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: () => api<void>(`/api/videos/${encodeURIComponent(id)}/upgrade`, { method: 'DELETE' }),
+		onSuccess: () => {
+			qc.setQueryData(qk.upgrade(id), null)
+			return qc.invalidateQueries({ queryKey: ['video', id] })
+		},
+	})
+}
+
+// --- system -------------------------------------------------------------------------
+
+export function useUpdateYtdlp() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: () => api<YtdlpUpdate>('/api/system/update-ytdlp', { method: 'POST' }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: qk.system }),
+	})
+}
+
+/** Ask ytpt to restart itself. The API answers first, then goes away for a few seconds. */
+export function useRequestRestart() {
+	return useMutation({
+		mutationFn: (force: boolean) => api<{ restarting: boolean }>('/api/system/restart', { method: 'POST', json: { force } }),
 	})
 }
 

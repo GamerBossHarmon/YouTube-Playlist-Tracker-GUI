@@ -13,6 +13,7 @@ import { OrphanedPage } from './pages/Orphaned'
 import { QueuePage } from './pages/Queue'
 import { SourceDetailPage } from './pages/SourceDetail'
 import { SourcesPage } from './pages/Sources'
+import { SystemPage } from './pages/System'
 import { WatchPage } from './pages/Watch'
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
 								<Route path="accounts" element={<AccountsPage />} />
 								<Route path="orphaned" element={<OrphanedPage />} />
 								<Route path="log" element={<LogPage />} />
+								<Route path="system" element={<SystemPage />} />
 								<Route path="*" element={<NotFoundPage />} />
 							</Route>
 						</Routes>

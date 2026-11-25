@@ -1,19 +1,22 @@
-import { CheckCircle2, Clock, Download, ExternalLink, FileWarning, Film, RotateCcw, Search, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock, Download, ExternalLink, FileWarning, Film, Layers, RotateCcw, Search, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ApiError } from '../api/client'
-import { useAttempts, useLocateVideo, useQueue, useRedownloadVideo, useRetryVideo, useVideo } from '../api/queries'
+import { useAttempts, useLocateVideo, useQueue, useRedownloadVideo, useRetryVideo, useUpgrade, useVideo } from '../api/queries'
 import type { VideoDetail } from '../api/types'
 import { Comments } from '../components/Comments'
 import { DownloadNowButton } from '../components/DownloadNowButton'
 import { FailVideoButton } from '../components/FailVideoButton'
 import { AttemptLogDialog } from '../components/AttemptLogDialog'
+import { UpgradeDialog } from '../components/UpgradeDialog'
+import { UpgradePanel } from '../components/UpgradePanel'
 import { Button } from '../components/ui/Button'
 import { Badge, ErrorState, ProgressBar, Spinner } from '../components/ui/Feedback'
 import { useToast } from '../components/ui/toastContext'
 import { formatBytes, formatDate, formatDateTime, formatDuration, formatEta, formatRelative, formatSpeed } from '../lib/format'
 import { cn } from '../lib/cn'
 import { STATUS_EXPLANATION, STATUS_META, failureLabel } from '../lib/labels'
+import { formatParts } from '../lib/videoFormat'
 import { useProgress } from '../live/progressStore'
 import { NotFoundPage } from './NotFound'
 
@@ -151,6 +154,21 @@ function Placeholder({ video }: { video: VideoDetail }) {
 	)
 }
 
+/** Resolution / codecs / container of the file, e.g. after a quality change. Nothing when still unknown. */
+function FormatChips({ video }: { video: VideoDetail }) {
+	const parts = formatParts(video)
+	if (parts.length === 0) return null
+	return (
+		<ul aria-label="File format" className="mt-2 flex flex-wrap gap-1.5">
+			{parts.map((p) => (
+				<li key={p}>
+					<Badge>{p}</Badge>
+				</li>
+			))}
+		</ul>
+	)
+}
+
 function Player({ video }: { video: VideoDetail }) {
 	const [broken, setBroken] = useState(false)
 	const id = video.youtube_id
@@ -167,7 +185,8 @@ function Player({ video }: { video: VideoDetail }) {
 				className="aspect-video w-full rounded-xl bg-black"
 				onError={() => setBroken(true)}
 			>
-				<source src={video.media_url ?? undefined} />
+				{/* v= changes when the file is replaced by an upgrade, so the browser does not keep the old one */}
+				<source src={video.media_url ? `${video.media_url}?v=${video.file_size_bytes ?? ''}` : undefined} />
 				{video.subtitle_languages.map((lang) => (
 					<track key={lang} kind="subtitles" src={`/api/media/${encodeURIComponent(id)}/subtitles/${encodeURIComponent(lang)}`} srcLang={lang} label={lang.toUpperCase()} default={lang === defaultLang} />
 				))}
@@ -217,6 +236,10 @@ export function WatchPage() {
 	const { id = '' } = useParams()
 	const video = useVideo(id)
 	const [descOpen, setDescOpen] = useState(false)
+	const [upgradeOpen, setUpgradeOpen] = useState(false)
+	const upgrade = useUpgrade(id)
+	// Anything but a failed attempt (which can simply be replaced) blocks starting another.
+	const pendingUpgrade = !!upgrade.data && upgrade.data.status !== 'failed'
 
 	if (video.isPending) {
 		return (
@@ -250,6 +273,7 @@ export function WatchPage() {
 					{v.file_size_bytes != null && <span>{formatBytes(v.file_size_bytes)}</span>}
 					{v.downloaded_at && <span title={formatDateTime(v.downloaded_at)}>Archived {formatRelative(v.downloaded_at)}</span>}
 				</div>
+				{playable && <FormatChips video={v} />}
 
 				<div className="mt-4 flex flex-wrap gap-2">
 					<a
@@ -261,11 +285,25 @@ export function WatchPage() {
 						<ExternalLink className="size-4" aria-hidden /> Open on YouTube
 					</a>
 					{playable && (
-						<a href={v.media_url ?? '#'} download className="inline-flex h-9 items-center gap-2 rounded-full bg-surface px-4 text-sm font-medium hover:bg-hover">
+						// ?download=1 makes the server name the file "<title> [<id>].<ext>" instead of "video".
+						<a href={`${v.media_url ?? ''}?download=1`} download className="inline-flex h-9 items-center gap-2 rounded-full bg-surface px-4 text-sm font-medium hover:bg-hover">
 							<Download className="size-4" aria-hidden /> Download file
 						</a>
 					)}
+					{playable && (
+						<Button
+							icon={<Layers className="size-4" />}
+							disabled={pendingUpgrade}
+							title={pendingUpgrade ? 'An upgrade for this video is already in progress' : 'Download this video again in another quality and compare before replacing'}
+							onClick={() => setUpgradeOpen(true)}
+						>
+							Change quality
+						</Button>
+					)}
 				</div>
+
+				{playable && <UpgradePanel video={v} onRetry={() => setUpgradeOpen(true)} />}
+				{playable && <UpgradeDialog key={`${v.youtube_id}:${v.file_size_bytes}`} video={v} open={upgradeOpen} onOpenChange={setUpgradeOpen} />}
 
 				{v.description && (
 					<div className="mt-5 rounded-xl bg-surface p-4 text-sm">

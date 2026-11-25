@@ -38,6 +38,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/system/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restart
+         * @description Restart ytpt (checks, downloads and this API) so a freshly installed yt-dlp is
+         *     picked up. The response comes first; the API is unreachable for a few seconds after.
+         *     Refused (409) while a download is running unless {"force": true}; an interrupted
+         *     download simply resumes after the restart.
+         */
+        post: operations["restart_api_system_restart_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/update-ytdlp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Ytdlp
+         * @description Upgrade yt-dlp now. Takes effect after ytpt restarts. Refused while a
+         *     download is running (pip must not swap files under it).
+         */
+        post: operations["update_ytdlp_api_system_update_ytdlp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/accounts": {
         parameters: {
             query?: never;
@@ -430,6 +474,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/videos/{youtube_id}/formats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Video Formats
+         * @description Every video format YouTube currently offers for this video (best first).
+         *     Asks YouTube, so it takes a few seconds.
+         */
+        get: operations["video_formats_api_videos__youtube_id__formats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/videos/{youtube_id}/upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Upgrade
+         * @description The video's quality upgrade, or null when none was requested.
+         */
+        get: operations["get_upgrade_api_videos__youtube_id__upgrade_get"];
+        put?: never;
+        /**
+         * Request Upgrade
+         * @description Queue a re-download in another quality. It is staged next to the original, which
+         *     is not touched until you accept the result.
+         */
+        post: operations["request_upgrade_api_videos__youtube_id__upgrade_post"];
+        /**
+         * Discard Upgrade
+         * @description Cancel or discard the upgrade (any state): a running download is stopped and the
+         *     staged files are deleted. The original file is never touched.
+         */
+        delete: operations["discard_upgrade_api_videos__youtube_id__upgrade_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/videos/{youtube_id}/upgrade/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Upgrade
+         * @description Replace the current file with the upgraded one. The old file and its sidecars
+         *     are deleted for good.
+         */
+        post: operations["accept_upgrade_api_videos__youtube_id__upgrade_accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/videos/{youtube_id}/move": {
         parameters: {
             query?: never;
@@ -583,9 +699,30 @@ export interface paths {
         /**
          * Media Video
          * @description The archived file. Starlette's FileResponse answers Range requests, so
-         *     seeking works in <video>.
+         *     seeking works in <video>. With ?download=1 it is sent as an attachment named
+         *     like the file on disk ("<title> [<id>].<ext>") instead of the URL's last segment.
          */
         get: operations["media_video_api_media__youtube_id__video_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/media/{youtube_id}/upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Media Upgrade
+         * @description The staged file of a ready quality upgrade, for previewing next to the current one.
+         */
+        get: operations["media_upgrade_api_media__youtube_id__upgrade_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -804,6 +941,32 @@ export interface components {
          * @enum {string}
          */
         FailureReason: "private" | "removed_by_uploader" | "tos" | "region_blocked" | "members_only" | "unavailable_unknown" | "download_error" | "cancelled";
+        /** FormatOptionOut */
+        FormatOptionOut: {
+            /** Format Id */
+            format_id: string;
+            /** Height */
+            height?: number | null;
+            /** Width */
+            width?: number | null;
+            /** Fps */
+            fps?: number | null;
+            /** Vcodec */
+            vcodec?: string | null;
+            /** Acodec */
+            acodec?: string | null;
+            /** Ext */
+            ext?: string | null;
+            /** Filesize Bytes */
+            filesize_bytes?: number | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** FormatsOut */
+        FormatsOut: {
+            /** Formats */
+            formats: components["schemas"]["FormatOptionOut"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -877,6 +1040,22 @@ export interface components {
             queued_total: number;
             /** Next Download In Seconds */
             next_download_in_seconds: number | null;
+        };
+        /** RestartOut */
+        RestartOut: {
+            /**
+             * Restarting
+             * @default true
+             */
+            restarting: boolean;
+        };
+        /** RestartRequest */
+        RestartRequest: {
+            /**
+             * Force
+             * @default false
+             */
+            force: boolean;
         };
         /**
          * SourceCreate
@@ -1003,6 +1182,18 @@ export interface components {
             file_missing_at?: string | null;
             /** File Size Bytes */
             file_size_bytes: number | null;
+            /** Width */
+            width?: number | null;
+            /** Height */
+            height?: number | null;
+            /** Fps */
+            fps?: number | null;
+            /** Vcodec */
+            vcodec?: string | null;
+            /** Acodec */
+            acodec?: string | null;
+            /** Ext */
+            ext?: string | null;
             /** Downloaded At */
             downloaded_at: string | null;
             /**
@@ -1030,8 +1221,30 @@ export interface components {
             version: string;
             /** Ytdlp Version */
             ytdlp_version: string;
+            /** Ytdlp Installed Version */
+            ytdlp_installed_version?: string | null;
+            /**
+             * Ytdlp Restart Required
+             * @default false
+             */
+            ytdlp_restart_required: boolean;
+            /**
+             * Ytdlp Auto Update
+             * @default true
+             */
+            ytdlp_auto_update: boolean;
             /** Scheduler Running */
             scheduler_running: boolean;
+            /**
+             * Download In Progress
+             * @default false
+             */
+            download_in_progress: boolean;
+            /**
+             * Restart Supported
+             * @default false
+             */
+            restart_supported: boolean;
             /** Cookies Present */
             cookies_present: boolean;
             primary_account?: components["schemas"]["AccountOut"] | null;
@@ -1109,6 +1322,56 @@ export interface components {
             /** Title */
             title: string | null;
         };
+        /** UpgradeOut */
+        UpgradeOut: {
+            /** Video Id */
+            video_id: string;
+            status: components["schemas"]["UpgradeStatus"];
+            /** Target Height */
+            target_height?: number | null;
+            /** Format Id */
+            format_id?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Width */
+            width?: number | null;
+            /** Height */
+            height?: number | null;
+            /** Fps */
+            fps?: number | null;
+            /** Vcodec */
+            vcodec?: string | null;
+            /** Acodec */
+            acodec?: string | null;
+            /** Ext */
+            ext?: string | null;
+            /** File Size Bytes */
+            file_size_bytes?: number | null;
+            /** Media Url */
+            media_url?: string | null;
+            progress?: components["schemas"]["ProgressOut"] | null;
+        };
+        /** UpgradeRequest */
+        UpgradeRequest: {
+            /** Target Height */
+            target_height?: number | null;
+            /** Format Id */
+            format_id?: string | null;
+            /** Account */
+            account?: string | null;
+        };
+        /**
+         * UpgradeStatus
+         * @enum {string}
+         */
+        UpgradeStatus: "queued" | "downloading" | "ready" | "failed";
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1146,6 +1409,18 @@ export interface components {
             file_missing_at?: string | null;
             /** File Size Bytes */
             file_size_bytes: number | null;
+            /** Width */
+            width?: number | null;
+            /** Height */
+            height?: number | null;
+            /** Fps */
+            fps?: number | null;
+            /** Vcodec */
+            vcodec?: string | null;
+            /** Acodec */
+            acodec?: string | null;
+            /** Ext */
+            ext?: string | null;
             /** Downloaded At */
             downloaded_at: string | null;
             /**
@@ -1214,6 +1489,18 @@ export interface components {
             file_missing_at?: string | null;
             /** File Size Bytes */
             file_size_bytes: number | null;
+            /** Width */
+            width?: number | null;
+            /** Height */
+            height?: number | null;
+            /** Fps */
+            fps?: number | null;
+            /** Vcodec */
+            vcodec?: string | null;
+            /** Acodec */
+            acodec?: string | null;
+            /** Ext */
+            ext?: string | null;
             /** Downloaded At */
             downloaded_at: string | null;
             /**
@@ -1233,6 +1520,24 @@ export interface components {
          * @enum {string}
          */
         VideoStatus: "queued" | "downloading" | "downloaded" | "failed" | "tombstoned" | "unavailable";
+        /** YtdlpUpdateOut */
+        YtdlpUpdateOut: {
+            /** Success */
+            success: boolean;
+            /** Upgraded */
+            upgraded: boolean;
+            /** Old Version */
+            old_version?: string | null;
+            /** New Version */
+            new_version?: string | null;
+            /**
+             * Restart Required
+             * @default false
+             */
+            restart_required: boolean;
+            /** Error Message */
+            error_message?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -1280,6 +1585,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemOut"];
+                };
+            };
+        };
+    };
+    restart_api_system_restart_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RestartRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestartOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ytdlp_api_system_update_ytdlp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YtdlpUpdateOut"];
                 };
             };
         };
@@ -2008,6 +2366,163 @@ export interface operations {
             };
         };
     };
+    video_formats_api_videos__youtube_id__formats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormatsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_upgrade_api_videos__youtube_id__upgrade_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpgradeOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_upgrade_api_videos__youtube_id__upgrade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpgradeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpgradeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_upgrade_api_videos__youtube_id__upgrade_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_upgrade_api_videos__youtube_id__upgrade_accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     move_video_api_videos__youtube_id__move_post: {
         parameters: {
             query?: never;
@@ -2235,7 +2750,42 @@ export interface operations {
     };
     media_video_api_media__youtube_id__video_get: {
         parameters: {
-            query?: never;
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                youtube_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    media_upgrade_api_media__youtube_id__upgrade_get: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
             header?: never;
             path: {
                 youtube_id: string;

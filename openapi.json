@@ -3,7 +3,7 @@
   "info": {
     "title": "ytpt",
     "description": "YouTube Playlist Tracker API",
-    "version": "1.0.1"
+    "version": "1.0.4"
   },
   "paths": {
     "/api/health": {
@@ -43,6 +43,77 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SystemOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/restart": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Restart",
+        "description": "Restart ytpt (checks, downloads and this API) so a freshly installed yt-dlp is\npicked up. The response comes first; the API is unreachable for a few seconds after.\nRefused (409) while a download is running unless {\"force\": true}; an interrupted\ndownload simply resumes after the restart.",
+        "operationId": "restart_api_system_restart_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RestartRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestartOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/update-ytdlp": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Update Ytdlp",
+        "description": "Upgrade yt-dlp now. Takes effect after ytpt restarts. Refused while a\ndownload is running (pip must not swap files under it).",
+        "operationId": "update_ytdlp_api_system_update_ytdlp_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YtdlpUpdateOut"
                 }
               }
             }
@@ -1243,6 +1314,228 @@
         }
       }
     },
+    "/api/videos/{youtube_id}/formats": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Video Formats",
+        "description": "Every video format YouTube currently offers for this video (best first).\nAsks YouTube, so it takes a few seconds.",
+        "operationId": "video_formats_api_videos__youtube_id__formats_get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormatsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/upgrade": {
+      "get": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Get Upgrade",
+        "description": "The video's quality upgrade, or null when none was requested.",
+        "operationId": "get_upgrade_api_videos__youtube_id__upgrade_get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/UpgradeOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Upgrade Api Videos  Youtube Id  Upgrade Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Request Upgrade",
+        "description": "Queue a re-download in another quality. It is staged next to the original, which\nis not touched until you accept the result.",
+        "operationId": "request_upgrade_api_videos__youtube_id__upgrade_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpgradeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpgradeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Discard Upgrade",
+        "description": "Cancel or discard the upgrade (any state): a running download is stopped and the\nstaged files are deleted. The original file is never touched.",
+        "operationId": "discard_upgrade_api_videos__youtube_id__upgrade_delete",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{youtube_id}/upgrade/accept": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Accept Upgrade",
+        "description": "Replace the current file with the upgraded one. The old file and its sidecars\nare deleted for good.",
+        "operationId": "accept_upgrade_api_videos__youtube_id__upgrade_accept_post",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/videos/{youtube_id}/move": {
       "post": {
         "tags": [
@@ -1732,7 +2025,7 @@
           "media"
         ],
         "summary": "Media Video",
-        "description": "The archived file. Starlette's FileResponse answers Range requests, so\nseeking works in <video>.",
+        "description": "The archived file. Starlette's FileResponse answers Range requests, so\nseeking works in <video>. With ?download=1 it is sent as an attachment named\nlike the file on disk (\"<title> [<id>].<ext>\") instead of the URL's last segment.",
         "operationId": "media_video_api_media__youtube_id__video_get",
         "parameters": [
           {
@@ -1742,6 +2035,67 @@
             "schema": {
               "type": "string",
               "title": "Youtube Id"
+            }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Download"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media/{youtube_id}/upgrade": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Media Upgrade",
+        "description": "The staged file of a ready quality upgrade, for previewing next to the current one.",
+        "operationId": "media_upgrade_api_media__youtube_id__upgrade_get",
+        "parameters": [
+          {
+            "name": "youtube_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Youtube Id"
+            }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Download"
             }
           }
         ],
@@ -2386,6 +2740,123 @@
         ],
         "title": "FailureReason"
       },
+      "FormatOptionOut": {
+        "properties": {
+          "format_id": {
+            "type": "string",
+            "title": "Format Id"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fps"
+          },
+          "vcodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vcodec"
+          },
+          "acodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acodec"
+          },
+          "ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ext"
+          },
+          "filesize_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filesize Bytes"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "format_id"
+        ],
+        "title": "FormatOptionOut"
+      },
+      "FormatsOut": {
+        "properties": {
+          "formats": {
+            "items": {
+              "$ref": "#/components/schemas/FormatOptionOut"
+            },
+            "type": "array",
+            "title": "Formats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "formats"
+        ],
+        "title": "FormatsOut"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2645,6 +3116,28 @@
           "next_download_in_seconds"
         ],
         "title": "QueueOut"
+      },
+      "RestartOut": {
+        "properties": {
+          "restarting": {
+            "type": "boolean",
+            "title": "Restarting",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "RestartOut"
+      },
+      "RestartRequest": {
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "title": "Force",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "RestartRequest"
       },
       "SourceCreate": {
         "properties": {
@@ -3073,6 +3566,72 @@
             ],
             "title": "File Size Bytes"
           },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fps"
+          },
+          "vcodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vcodec"
+          },
+          "acodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acodec"
+          },
+          "ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ext"
+          },
           "downloaded_at": {
             "anyOf": [
               {
@@ -3162,9 +3721,40 @@
             "type": "string",
             "title": "Ytdlp Version"
           },
+          "ytdlp_installed_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ytdlp Installed Version"
+          },
+          "ytdlp_restart_required": {
+            "type": "boolean",
+            "title": "Ytdlp Restart Required",
+            "default": false
+          },
+          "ytdlp_auto_update": {
+            "type": "boolean",
+            "title": "Ytdlp Auto Update",
+            "default": true
+          },
           "scheduler_running": {
             "type": "boolean",
             "title": "Scheduler Running"
+          },
+          "download_in_progress": {
+            "type": "boolean",
+            "title": "Download In Progress",
+            "default": false
+          },
+          "restart_supported": {
+            "type": "boolean",
+            "title": "Restart Supported",
+            "default": false
           },
           "cookies_present": {
             "type": "boolean",
@@ -3409,6 +3999,224 @@
         ],
         "title": "TimelineVideo"
       },
+      "UpgradeOut": {
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "title": "Video Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UpgradeStatus"
+          },
+          "target_height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Height"
+          },
+          "format_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format Id"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fps"
+          },
+          "vcodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vcodec"
+          },
+          "acodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acodec"
+          },
+          "ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ext"
+          },
+          "file_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size Bytes"
+          },
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_id",
+          "status",
+          "created_at"
+        ],
+        "title": "UpgradeOut"
+      },
+      "UpgradeRequest": {
+        "properties": {
+          "target_height": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 8640,
+                "minimum": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Height"
+          },
+          "format_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9._-]{1,64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format Id"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account"
+          }
+        },
+        "type": "object",
+        "title": "UpgradeRequest"
+      },
+      "UpgradeStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "downloading",
+          "ready",
+          "failed"
+        ],
+        "title": "UpgradeStatus"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -3562,6 +4370,72 @@
               }
             ],
             "title": "File Size Bytes"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fps"
+          },
+          "vcodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vcodec"
+          },
+          "acodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acodec"
+          },
+          "ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ext"
           },
           "downloaded_at": {
             "anyOf": [
@@ -3849,6 +4723,72 @@
             ],
             "title": "File Size Bytes"
           },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fps"
+          },
+          "vcodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vcodec"
+          },
+          "acodec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acodec"
+          },
+          "ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ext"
+          },
           "downloaded_at": {
             "anyOf": [
               {
@@ -3928,6 +4868,62 @@
           "unavailable"
         ],
         "title": "VideoStatus"
+      },
+      "YtdlpUpdateOut": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "upgraded": {
+            "type": "boolean",
+            "title": "Upgraded"
+          },
+          "old_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Version"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "restart_required": {
+            "type": "boolean",
+            "title": "Restart Required",
+            "default": false
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "upgraded"
+        ],
+        "title": "YtdlpUpdateOut"
       }
     }
   }

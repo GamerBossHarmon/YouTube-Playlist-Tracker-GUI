@@ -1,5 +1,6 @@
 import { AlertTriangle, Info, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
 import type { SystemInfo } from '../api/types'
 import { cn } from '../lib/cn'
 
@@ -52,6 +53,14 @@ export function SystemBanners({ system }: { system: SystemInfo }) {
 			{!system.scheduler_running && (
 				<Banner id="scheduler" tone="warning">
 					<strong>The scheduler is not running.</strong> Sources are not being checked and nothing is downloading. Start it with <code>ytpt run</code>.
+				</Banner>
+			)}
+			{system.ytdlp_restart_required && (
+				<Banner id="ytdlp-restart" tone="info">
+					<strong>yt-dlp {system.ytdlp_installed_version} is installed, but ytpt is still running {system.ytdlp_version}.</strong> Restart ytpt to start using the new one.{' '}
+					<Link to="/system" className="font-medium underline">
+						Open System
+					</Link>
 				</Banner>
 			)}
 			{system.server_exposed && (

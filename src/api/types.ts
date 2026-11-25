@@ -29,6 +29,12 @@ export type EventsPage = S['EventsPage']
 export type Severity = LogEvent['severity']
 
 export type SystemInfo = S['SystemOut']
+export type YtdlpUpdate = S['YtdlpUpdateOut']
+
+export type FormatOption = S['FormatOptionOut']
+export type FormatsList = S['FormatsOut']
+export type Upgrade = S['UpgradeOut']
+export type UpgradeRequest = S['UpgradeRequest']
 
 export type Account = S['AccountOut']
 export type AccountPlaylist = S['AccountPlaylistOut']

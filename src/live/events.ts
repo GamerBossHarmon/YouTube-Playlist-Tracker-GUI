@@ -29,6 +29,20 @@ export function keysForEvent(e: Pick<LogEvent, 'event_type' | 'source_id' | 'vid
 		case 'download_started':
 			keys.push(['queue'])
 			withVideo()
+			if (vid) keys.push(['upgrade', vid]) // an upgrade download starts through the same worker
+			break
+		case 'upgrade_requested':
+		case 'upgrade_ready':
+		case 'upgrade_failed':
+		case 'upgrade_discarded':
+			withVideo()
+			if (vid) keys.push(['upgrade', vid])
+			break
+		case 'upgrade_accepted':
+			// The file, its size and format changed: the grid, the video page and disk usage.
+			withVideo()
+			if (vid) keys.push(['upgrade', vid], ['comments', vid])
+			keys.push(['system'])
 			break
 		case 'video_downloaded':
 			withSource()

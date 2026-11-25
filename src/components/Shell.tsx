@@ -1,11 +1,13 @@
-import { Archive, Download, House, ListVideo, Plus, ScrollText, Search, UserRound } from 'lucide-react'
+import { Archive, Download, House, ListVideo, Plus, ScrollText, Search, Settings, UserRound } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { useQueue, useSystem } from '../api/queries'
 import { cn } from '../lib/cn'
 import { formatBytes } from '../lib/format'
+import { useRestartPhase } from '../lib/restartStore'
 import { useLive } from '../live/liveContext'
 import { SystemBanners } from './Banners'
+import { RestartOverlay } from './RestartOverlay'
 import { AddSourceDialog } from './SourceDialogs'
 import { Button, IconButton } from './ui/Button'
 import { ErrorState, Spinner } from './ui/Feedback'
@@ -24,6 +26,7 @@ const NAV: NavItem[] = [
 	{ to: '/accounts', label: 'Accounts', icon: UserRound },
 	{ to: '/orphaned', label: 'Orphaned', icon: Archive },
 	{ to: '/log', label: 'Log', icon: ScrollText },
+	{ to: '/system', label: 'System', icon: Settings },
 ]
 
 function LiveDot() {
@@ -111,6 +114,7 @@ function Sidebar() {
 						</span>
 						<span className="text-faint">
 							ytpt {system.version} · yt-dlp {system.ytdlp_version}
+								{system.ytdlp_restart_required && <span className="text-warning"> · restart needed</span>}
 						</span>
 					</>
 				)}
@@ -139,6 +143,7 @@ function BottomNav() {
 
 export function Shell() {
 	const system = useSystem()
+	const restartPhase = useRestartPhase()
 	const [adding, setAdding] = useState(false)
 
 	return (
@@ -163,12 +168,12 @@ export function Shell() {
 						<div className="flex justify-center py-24">
 							<Spinner className="size-8" />
 						</div>
-					) : system.isError ? (
+					) : system.isError && restartPhase === 'idle' ? (
 						<ErrorState error={system.error} onRetry={() => system.refetch()} />
 					) : (
 						<>
 							<div className="mb-5 flex flex-col gap-3 empty:hidden">
-								<SystemBanners system={system.data} />
+								{system.data && <SystemBanners system={system.data} />}
 							</div>
 							<Outlet />
 						</>
@@ -177,6 +182,7 @@ export function Shell() {
 			</div>
 			<BottomNav />
 			<AddSourceDialog open={adding} onOpenChange={setAdding} />
+			<RestartOverlay />
 		</div>
 	)
 }

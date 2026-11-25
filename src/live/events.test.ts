@@ -25,6 +25,18 @@ describe('keysForEvent', () => {
 		expect(keys).not.toContain('["sources"]')
 	})
 
+	it('upgrade events refresh the video and its upgrade panel', () => {
+		for (const type of ['upgrade_requested', 'upgrade_ready', 'upgrade_failed', 'upgrade_discarded']) {
+			const keys = roots(keysForEvent({ event_type: type, source_id: null, video_id: 'abc' }) as unknown[][])
+			expect(keys).toEqual(expect.arrayContaining(['["upgrade","abc"]', '["video","abc"]']))
+		}
+	})
+
+	it('accepting an upgrade also refreshes disk usage and the grid', () => {
+		const keys = roots(keysForEvent({ event_type: 'upgrade_accepted', source_id: null, video_id: 'abc' }) as unknown[][])
+		expect(keys).toEqual(expect.arrayContaining(['["upgrade","abc"]', '["video","abc"]', '["videos"]', '["system"]']))
+	})
+
 	it('scheduler restart invalidates everything', () => {
 		expect(keysForEvent({ event_type: 'scheduler_started', source_id: null, video_id: null })).toEqual([[]])
 	})
